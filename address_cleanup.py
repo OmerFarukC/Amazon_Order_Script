@@ -31,7 +31,7 @@ column_position_mapping = {
     39: 'INVOICE_COUNTRY',          # bill-country
     40: 'PROMOSYON_PRICE',          # Ürün Promosyon İndirimi
     41: 'KARGO_PROMOSYON_INDIRIMI', # Kargo Promosyon İndirimi
-    43: 'CARGO_TRACK_NO',           # Takip Numarası
+    43: 'CAROG_TRACK_NO',           # Takip Numarası
     47: 'SALES_CHANNEL'             # Satış Kanalı
 }
 
@@ -169,6 +169,9 @@ df = df[column_position_mapping.values()]
 df['STATE'] = ''  # Empty column
 df['DATE_ADDED'] = datetime.now().strftime('%d/%m/%Y')  # Add today's date in DD/MM/YYYY format
 
+# Ensure DATE_ADDED is in the correct format
+df['DATE_ADDED'] = pd.to_datetime(df['DATE_ADDED'], format='%d/%m/%Y').dt.strftime('%d/%m/%Y')
+
 turkish_cities = ["Adana", "Ankara", "İstanbul","Istanbul","istanbul","ıstanbul","İzmir", "Antalya", "Bursa", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ardahan", "Artvin", "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş", "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Şanlıurfa", "Siirt", "Sinop", "Sivas", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"]
 
 # Function to abbreviate an address
@@ -261,14 +264,25 @@ def adjust_zip_code(zip_code):
 
 def convert_date_format(date_str):
     try:
-        # Parse the date string to a datetime object
-        date_obj = pd.to_datetime(date_str)
+        # First, try parsing the date with ISO 8601 format
+        date_obj = pd.to_datetime(date_str, errors='coerce')
 
-        # Format the datetime object to the desired string format
+        # If parsing fails (resulting in NaT), try 'DD/MM/YYYY' format
+        if pd.isna(date_obj):
+            date_obj = pd.to_datetime(date_str, format='%d/%m/%Y', errors='coerce')
+
+        # Check if date_obj is still NaT after both attempts
+        if pd.isna(date_obj):
+            print(f"Warning: Unable to parse date '{date_str}'. Defaulting to original value.")
+            return date_str
+
         return date_obj.strftime('%d/%m/%Y')
-    except:
-        # If the date is NaT or invalid, return the original input
+
+    except Exception as e:
+        print(f"Error processing date '{date_str}': {e}")
         return date_str
+
+
 
 #LAST TWO COLUMNS ARE GONE???
 
@@ -545,7 +559,7 @@ abbreviations = {
 }
 
 # Specify the data types for certain columns now that they are renamed
-df = df.astype({'ECOMM_CATALOG_NO': str, 'CARGO_TRACK_NO': str})
+df = df.astype({'ECOMM_CATALOG_NO': str, 'CAROG_TRACK_NO': str})
 
 df['CUSTOMER_NAME'] = df['CUSTOMER_NAME'].apply(transform_customer_name)
 df['INVOICE_ZIP_CODE'] = df['INVOICE_ZIP_CODE'].apply(adjust_zip_code)
@@ -554,7 +568,7 @@ df['INVOICE_ZIP_CODE'] = df['INVOICE_ZIP_CODE'].apply(adjust_zip_code)
 df['ORDER_DATE'] = df['ORDER_DATE'].apply(convert_date_format)
 df['PAYMENT_DATE'] = df['PAYMENT_DATE'].apply(convert_date_format)
 df['REPORT_DATE'] = df['REPORT_DATE'].apply(convert_date_format)
-df['DATE_ADDED'] = df['DATE_ADDED'].apply(convert_date_format)
+#df['DATE_ADDED'] = df['DATE_ADDED'].apply(convert_date_format)
 df['INVOICE_CITY'] = df['INVOICE_CITY'].str.upper()
 
 # Call the function to consolidate orders
