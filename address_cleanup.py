@@ -169,6 +169,9 @@ df = df[column_position_mapping.values()]
 df['STATE'] = ''  # Empty column
 df['DATE_ADDED'] = datetime.now().strftime('%d/%m/%Y')  # Add today's date in DD/MM/YYYY format
 
+# Replace '--' with 'MERKEZ' in INVOICE_COUNTY
+df['INVOICE_COUNTY'] = df['INVOICE_COUNTY'].replace('--', 'MERKEZ')
+
 # Ensure DATE_ADDED is in the correct format
 df['DATE_ADDED'] = pd.to_datetime(df['DATE_ADDED'], format='%d/%m/%Y').dt.strftime('%d/%m/%Y')
 
